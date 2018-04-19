@@ -1,4 +1,4 @@
-package com.xlaoy.netty.demo04;
+package com.xlaoy.netty.demo05;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -14,6 +14,7 @@ import io.netty.handler.codec.string.StringEncoder;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * Created by Administrator on 2018/4/17 0017.
@@ -32,9 +33,8 @@ public class TimeServer {
                 @Override
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     //socketChannel.pipeline().addLast(new DelimiterBasedFrameDecoder(1024, Unpooled.copiedBuffer("#".getBytes())));
-                    socketChannel.pipeline().addLast(new LineBasedFrameDecoder(1024));
-                    socketChannel.pipeline().addLast(new StringDecoder());
-                    socketChannel.pipeline().addLast(new StringEncoder());
+                    socketChannel.pipeline().addLast(new MsgPackDecoder());
+                    socketChannel.pipeline().addLast(new MsgPackEncoder());
                     socketChannel.pipeline().addLast(new TimeServerHandler());
                 }
             });
@@ -49,24 +49,11 @@ public class TimeServer {
 
     public static class TimeServerHandler extends ChannelInboundHandlerAdapter {
 
-        private Integer count = 0;
+        private int count = 0;
 
         @Override
-        public void channelRead(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
-            /*ByteBuf byteBuf = (ByteBuf) o;
-            byte[] requests = new byte[byteBuf.readableBytes()];
-            byteBuf.readBytes(requests);
-            String content = new String(requests, "UTF-8").substring(0, requests.length - "#".length());*/
-            String msg = (String)o;
-            System.out.println("body = " + msg + ", count = " + ++count);
-            String respStr;
-            if("get_time".equalsIgnoreCase(msg)) {
-                respStr = LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE) + "\n";
-            } else {
-                respStr = "error\n";
-            }
-            ByteBuf response = Unpooled.copiedBuffer(respStr.getBytes());
-            channelHandlerContext.writeAndFlush(response);
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            System.out.println(msg + ", count = " + ++count);
         }
 
         @Override
